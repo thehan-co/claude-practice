@@ -1,0 +1,2720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Costa Rica Family Adventure 2026</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50; min-height: 100vh; overflow: hidden; font-size: 16px; line-height: 1.7;
+        }
+        .header {
+            background: white; padding: 2rem; text-align: center;
+            box-shadow: 0 2px 16px rgba(0,43,127,0.08); position: relative; z-index: 1000;
+            border-bottom: 3px solid #002b7f;
+        }
+        .header h1 { color: #002b7f; font-size: 2.2rem; margin-bottom: 0.3rem; font-weight: 700; letter-spacing: 0.5px; }
+        .header p { color: #ce1126; font-size: 0.95rem; font-weight: 500; opacity: 0.85; }
+        #map { height: calc(100vh - 85px); width: 100%; background: #f0f0f0; position: relative; }
+
+        .center-button {
+            position: absolute; top: 80px; right: 10px; z-index: 1000;
+            background: white; border: 2px solid #002b7f; border-radius: 8px;
+            padding: 10px 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            font-weight: 600; color: #002b7f;
+        }
+        .center-button:hover { background: #002b7f; color: white; }
+
+        .overlay-backdrop {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 2000;
+        }
+        .overlay-backdrop.active { display: block; }
+        .overlay-card {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white; border-radius: 16px; width: 90%; max-width: 500px;
+            max-height: 85vh; overflow-y: auto; z-index: 2001;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .overlay-card.active { display: block; }
+        .card-header {
+            background: linear-gradient(135deg, #002b7f 0%, #003d99 100%);
+            color: white; padding: 1.2rem 1.5rem; border-radius: 16px 16px 0 0; position: relative;
+        }
+        .card-header h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .card-dates { font-size: 0.9rem; opacity: 0.85; }
+        .card-travelers { font-size: 0.85rem; opacity: 0.75; margin-top: 0.3rem; }
+        .card-close {
+            position: absolute; top: 10px; right: 14px; color: white;
+            font-size: 2rem; cursor: pointer; opacity: 0.7; background: none; border: none; line-height: 1;
+        }
+        .card-close:hover { opacity: 1; }
+        .card-body { padding: 1.2rem 1.5rem; }
+        .card-section { margin-bottom: 1rem; }
+        .card-section h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 0.5rem; }
+        .link-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+        .link-button {
+            display: inline-block; background: #002b7f; color: white;
+            padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 0.85rem;
+        }
+        .link-button:hover { background: #003d99; }
+        .link-button.instagram {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        }
+        .card-section ul { list-style: none; padding: 0; }
+        .card-section ul li {
+            padding: 0.4rem 0; border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem; color: #444;
+        }
+        .card-section ul li:last-child { border-bottom: none; }
+        .card-section ul li a { color: #002b7f; text-decoration: none; font-weight: 500; }
+        .card-section ul li a:hover { text-decoration: underline; }
+        .activity-date {
+            font-size: 0.75rem; font-weight: 600; color: #999; display: block; margin-bottom: 2px;
+        }
+
+        /* ===== PAGE NAVIGATION & CONTAINER STYLES ===== */
+        .nav-buttons {
+            display: flex; gap: 1.2rem; justify-content: center;
+        }
+        .nav-btn {
+            background: white; border: 2px solid #002b7f; color: #002b7f;
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700;
+            transition: all 0.3s ease; font-size: 0.95rem;
+        }
+        .nav-btn:hover { background: #f0f7ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,43,127,0.15); }
+        .nav-btn.active { background: #002b7f; color: white; box-shadow: 0 4px 12px rgba(0,43,127,0.3); }
+
+        .page-container {
+            display: none; position: fixed; top: 85px; left: 0; width: 100%;
+            height: calc(100vh - 85px); overflow-y: auto; background: #f5f7fa; z-index: 100;
+            padding-top: 2.5rem; padding-bottom: 2rem;
+        }
+        .page-container.active { display: block; }
+
+        /* Floating action icons on map page */
+        .floating-icons {
+            position: fixed; bottom: 20px; right: 20px; z-index: 999;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .floating-btn {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #002b7f; color: white; border: none;
+            font-size: 1.5rem; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease; position: relative;
+        }
+        .floating-btn:hover {
+            background: #003d99; transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        .floating-btn-label {
+            position: absolute; right: 65px; background: #333; color: white;
+            padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;
+            white-space: nowrap; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .floating-btn:hover .floating-btn-label { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .floating-icons { bottom: 15px; right: 15px; }
+            .floating-btn { width: 45px; height: 45px; font-size: 1.3rem; }
+        }
+
+        /* ===== FLIGHT DETAILS PAGE STYLES ===== */
+        .flight-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem; margin-bottom: 3rem; max-width: 1200px; margin-left: auto; margin-right: auto;
+            padding: 0 2rem;
+        }
+
+        .flight-card {
+            background: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,43,127,0.08);
+            overflow: hidden; transition: all 0.3s ease;
+        }
+
+        .flight-card:hover { box-shadow: 0 8px 24px rgba(0,43,127,0.12); transform: translateY(-2px); }
+
+        .flight-card-header {
+            color: white; padding: 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .flight-card-header h3 {
+            font-size: 1.6rem; margin: 0; font-weight: 800;
+            display: flex; align-items: center; gap: 0.8rem;
+        }
+
+        .flight-person-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Color scheme for each person */
+        .flight-card.person-han .flight-card-header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
+        .flight-card.person-merit .flight-card-header { background: linear-gradient(135deg, #c62828 0%, #e91e63 100%); }
+        .flight-card.person-eli .flight-card-header { background: linear-gradient(135deg, #0288d1 0%, #01579b 100%); }
+        .flight-card.person-gaiah .flight-card-header { background: linear-gradient(135deg, #7b1fa2 0%, #512da8 100%); }
+        .flight-card.person-lya .flight-card-header { background: linear-gradient(135deg, #d32f2f 0%, #ff6f00 100%); }
+        .flight-card.person-dandan .flight-card-header { background: linear-gradient(135deg, #0097a7 0%, #006064 100%); }
+
+        .flight-card-body { padding: 2rem; }
+
+        .flight-section { margin-bottom: 2.2rem; }
+
+        .flight-section:last-child { margin-bottom: 0; }
+
+        .flight-section-title {
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px;
+            color: #666; margin-bottom: 1.2rem; font-weight: 700;
+        }
+
+        .flight-info {
+            display: flex; flex-direction: column; gap: 0.8rem;
+            font-size: 0.95rem; color: #333;
+        }
+
+        .flight-info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.8rem 0; border-bottom: 1px solid #f0f0f0;
+        }
+
+        .flight-info-row:last-child { border-bottom: none; }
+
+        .flight-info-label { color: #888; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .flight-info-value { font-weight: 700; color: #002b7f; font-size: 1rem; }
+
+        .flight-status {
+            display: flex; align-items: center; gap: 1rem; padding: 1.2rem;
+            background: #f8f9fb; border-radius: 10px; margin: 1.5rem 0;
+            border-left: 4px solid #002b7f;
+        }
+
+        .status-led {
+            width: 18px; height: 18px; border-radius: 50%;
+            flex-shrink: 0; box-shadow: 0 0 10px currentColor;
+        }
+
+        .status-led.green {
+            background: #28a745; box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
+        }
+
+        .status-led.yellow {
+            background: #ffc107; box-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
+        }
+
+        .status-led.red {
+            background: #dc3545; box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+        }
+
+        .status-text {
+            font-weight: 700; font-size: 1rem;
+        }
+
+        .status-text.green { color: #28a745; }
+        .status-text.yellow { color: #ffc107; }
+        .status-text.red { color: #dc3545; }
+
+        .countdown {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e8f4f8 100%); border-left: 4px solid #002b7f;
+            padding: 1.3rem; border-radius: 10px; margin: 1.5rem 0;
+        }
+
+        .countdown-label {
+            font-size: 0.8rem; color: #666; display: block; margin-bottom: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .countdown-time {
+            font-size: 1.6rem; font-weight: 800; color: #002b7f; display: block;
+        }
+
+        .last-updated {
+            font-size: 0.75rem; color: #aaa; margin-top: 1rem; display: block;
+        }
+
+        .btn-flightaware {
+            display: inline-block; background: #002b7f; color: white;
+            padding: 12px 20px; border-radius: 8px; text-decoration: none;
+            font-size: 0.9rem; font-weight: 700; border: none;
+            cursor: pointer; transition: all 0.3s ease; width: 100%;
+            text-align: center;
+        }
+
+        .btn-flightaware:hover { background: #003d99; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,43,127,0.3); }
+
+        /* Person-level collapsible card */
+        .flight-card-header-person {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.5rem 2rem; cursor: pointer;
+            transition: all 0.3s ease; user-select: none;
+            border-radius: 16px 16px 0 0;
+            background: linear-gradient(135deg, #002b7f 0%, #003d99 100%);
+            color: white;
+        }
+
+        .flight-card-header-person:hover {
+            background: linear-gradient(135deg, #003d99 0%, #004fa8 100%);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,43,127,0.2);
+        }
+
+        /* Color schemes for each person */
+        .flight-card.person-han .flight-card-header-person { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
+        .flight-card.person-merit .flight-card-header-person { background: linear-gradient(135deg, #c62828 0%, #e91e63 100%); }
+        .flight-card.person-eli .flight-card-header-person { background: linear-gradient(135deg, #0288d1 0%, #01579b 100%); }
+        .flight-card.person-gaiah .flight-card-header-person { background: linear-gradient(135deg, #7b1fa2 0%, #512da8 100%); }
+        .flight-card.person-lya .flight-card-header-person { background: linear-gradient(135deg, #d32f2f 0%, #ff6f00 100%); }
+        .flight-card.person-dandan .flight-card-header-person { background: linear-gradient(135deg, #0097a7 0%, #006064 100%); }
+
+        .flight-card.person-han .flight-card-header-person:hover { background: linear-gradient(135deg, #2a5298 0%, #3066bb 100%); }
+        .flight-card.person-merit .flight-card-header-person:hover { background: linear-gradient(135deg, #e91e63 0%, #f06292 100%); }
+        .flight-card.person-eli .flight-card-header-person:hover { background: linear-gradient(135deg, #01579b 0%, #0277bd 100%); }
+        .flight-card.person-gaiah .flight-card-header-person:hover { background: linear-gradient(135deg, #512da8 0%, #7b1fa2 100%); }
+        .flight-card.person-lya .flight-card-header-person:hover { background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%); }
+        .flight-card.person-dandan .flight-card-header-person:hover { background: linear-gradient(135deg, #006064 0%, #00838f 100%); }
+
+        .person-collapse-arrow {
+            font-size: 1.8rem; font-weight: 800; color: white;
+            transition: transform 0.3s ease; flex-shrink: 0;
+            min-width: 28px; text-align: center;
+        }
+
+        .flight-card.expanded .person-collapse-arrow {
+            transform: rotate(90deg);
+        }
+
+        .person-header-content {
+            flex: 1;
+        }
+
+        .person-header-content h3 {
+            font-size: 1.5rem; margin: 0; font-weight: 800;
+            display: flex; align-items: center; gap: 0.6rem; color: white;
+        }
+
+        .person-departure-info {
+            font-size: 0.85rem; color: rgba(255,255,255,0.9);
+            margin-top: 0.3rem; font-weight: 500;
+        }
+
+        .flight-card-body-person {
+            padding: 1.5rem 2rem; background: white;
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height 0.6s ease, opacity 0.6s ease;
+        }
+
+        .flight-card.expanded .flight-card-body-person {
+            max-height: 3000px; opacity: 1; overflow: visible;
+        }
+
+        .journey-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .journey-section:last-child { margin-bottom: 0; }
+
+        .journey-title {
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px;
+            color: #666; margin-bottom: 1rem; font-weight: 700;
+        }
+
+        /* Compact flight leg styles */
+        .flight-leg {
+            background: #f8f9fb; border-radius: 10px;
+            padding: 0.8rem 1rem; margin-bottom: 0.8rem;
+            border: 1px solid #e5e9f0;
+        }
+
+        .flight-leg:last-child { margin-bottom: 0; }
+
+        .flight-leg-compact {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .airport-compact {
+            display: flex; flex-direction: column; align-items: center;
+            min-width: 55px;
+        }
+
+        .airport-code-compact {
+            font-size: 1.3rem; font-weight: 800; color: #002b7f;
+        }
+
+        .airport-city-compact {
+            font-size: 0.65rem; color: #666; font-weight: 500;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .flight-arrow-compact {
+            font-size: 1.2rem; color: #ce1126; flex-shrink: 0;
+        }
+
+        .flight-duration-compact {
+            font-weight: 700; color: #333; font-size: 0.9rem;
+            margin-left: auto; min-width: 70px; text-align: right;
+        }
+
+        .flight-details-inline {
+            display: flex; flex-wrap: wrap; gap: 1rem;
+            font-size: 0.85rem; align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .flight-number {
+            font-weight: 700; color: #002b7f;
+        }
+
+        .flight-time {
+            color: #666;
+        }
+
+        .flight-seat {
+            color: #666;
+        }
+
+        .flight-gate {
+            color: #666;
+        }
+
+        .flight-status-link {
+            color: #002b7f; text-decoration: none; font-size: 1rem;
+            cursor: pointer; transition: transform 0.2s;
+        }
+
+        .flight-status-link:hover {
+            transform: scale(1.2);
+        }
+
+        .flight-status-inline {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        .status-led {
+            width: 12px; height: 12px; border-radius: 50%;
+            flex-shrink: 0; box-shadow: 0 0 6px currentColor;
+        }
+
+        .status-led.green {
+            background: #28a745; box-shadow: 0 0 6px rgba(40, 167, 69, 0.6);
+        }
+
+        .status-led.yellow {
+            background: #ffc107; box-shadow: 0 0 6px rgba(255, 193, 7, 0.6);
+        }
+
+        .status-led.red {
+            background: #dc3545; box-shadow: 0 0 6px rgba(220, 53, 69, 0.6);
+        }
+
+        .status-text {
+            font-weight: 600; font-size: 0.8rem;
+        }
+
+        .status-text.green { color: #28a745; }
+        .status-text.yellow { color: #ffc107; }
+        .status-text.red { color: #dc3545; }
+
+        .countdown-inline {
+            display: flex; gap: 0.8rem; font-size: 0.85rem;
+            margin-top: 0.5rem; padding-top: 0.5rem;
+            border-top: 1px solid #e5e9f0;
+        }
+
+        .countdown-label-inline {
+            color: #666; font-weight: 600;
+        }
+
+        .countdown-time-inline {
+            font-weight: 800; color: #002b7f;
+        }
+
+        .connection-card {
+            background: linear-gradient(135deg, #ffe082 0%, #ffd54f 100%);
+            border: 2px solid #ff9800; border-left: 5px solid #ff9800;
+            border-radius: 8px; padding: 1rem 1.2rem; margin: 1.2rem 0;
+            display: flex !important; align-items: center; gap: 1.2rem;
+            width: 100%;
+        }
+
+        .connection-airport {
+            font-size: 1.1rem; font-weight: 800; color: #ff9800;
+            min-width: 45px; text-align: center;
+        }
+
+        .connection-times {
+            display: flex; flex-direction: column; gap: 0.3rem;
+            font-size: 0.85rem; flex: 1;
+        }
+
+        .conn-arrival {
+            color: #666; font-weight: 600;
+        }
+
+        .conn-duration {
+            font-weight: 800; color: #e65100; font-size: 0.9rem;
+        }
+
+        .conn-departure {
+            color: #666; font-weight: 600;
+        }
+
+        .flight-tbd {
+            color: #999; text-align: center; padding: 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .flight-container {
+                grid-template-columns: 1fr;
+            }
+            .flight-card-header {
+                flex-direction: column; align-items: flex-start;
+            }
+            .flight-leg { padding: 1.2rem; }
+            .airport-code { font-size: 1.5rem; }
+        }
+
+        /* ===== BUDGET PAGE STYLES ===== */
+        .chart-container {
+            background: white; padding: 3rem; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,43,127,0.08); margin-bottom: 3rem;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 420px; max-width: 1200px; margin-left: auto; margin-right: auto;
+            padding-left: 2rem; padding-right: 2rem;
+        }
+
+        #expense-chart {
+            max-width: 100%; max-height: 420px;
+        }
+
+        .budget-summary {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem; margin-bottom: 3rem; max-width: 1200px; margin-left: auto; margin-right: auto;
+            padding: 0 2rem;
+        }
+
+        .summary-card {
+            background: white; padding: 2.2rem; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,43,127,0.08); text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            box-shadow: 0 8px 24px rgba(0,43,127,0.12);
+            transform: translateY(-2px);
+        }
+
+        .summary-label {
+            font-size: 0.8rem; color: #888; text-transform: uppercase;
+            letter-spacing: 1.2px; margin-bottom: 0.8rem; font-weight: 700;
+        }
+
+        .summary-value {
+            font-size: 2.4rem; font-weight: 800; color: #002b7f;
+        }
+
+        .summary-card {
+            position: relative;
+        }
+
+        .btn-edit-budget {
+            position: absolute; top: 15px; right: 15px;
+            background: #002b7f; color: white; border: none;
+            width: 36px; height: 36px; border-radius: 50%;
+            cursor: pointer; font-size: 1rem; display: flex;
+            align-items: center; justify-content: center;
+            transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,43,127,0.2);
+        }
+
+        .btn-edit-budget:hover {
+            background: #003d99; transform: scale(1.1); box-shadow: 0 4px 12px rgba(0,43,127,0.3);
+        }
+
+        .budget-modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            z-index: 3000; align-items: center; justify-content: center;
+        }
+
+        .budget-modal.active {
+            display: flex;
+        }
+
+        .budget-modal-content {
+            background: white; padding: 2.5rem; border-radius: 16px;
+            width: 90%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,43,127,0.15);
+        }
+
+        .budget-modal-content h3 {
+            color: #002b7f; margin-bottom: 2rem; font-size: 1.4rem; font-weight: 700;
+        }
+
+        .budget-modal-input {
+            width: 100%; padding: 14px; border: 2px solid #ddd;
+            border-radius: 8px; font-size: 1.1rem; margin-bottom: 2rem;
+            font-family: inherit; transition: all 0.3s;
+        }
+
+        .budget-modal-input:focus {
+            outline: none; border-color: #002b7f; box-shadow: 0 0 0 3px rgba(0,43,127,0.1);
+        }
+
+        .budget-modal-buttons {
+            display: flex; gap: 1.2rem;
+        }
+
+        .budget-modal-buttons button {
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            font-weight: 700; cursor: pointer; transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .budget-modal-buttons .btn-save {
+            background: #002b7f; color: white;
+        }
+
+        .budget-modal-buttons .btn-save:hover {
+            background: #003d99; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,43,127,0.3);
+        }
+
+        .budget-modal-buttons .btn-close-modal {
+            background: #ddd; color: #333;
+        }
+
+        .budget-modal-buttons .btn-close-modal:hover {
+            background: #ccc;
+        }
+
+        .budget-form {
+            background: white; padding: 2.5rem; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,43,127,0.08); margin-bottom: 3rem;
+            max-width: 1200px; margin-left: auto; margin-right: auto; padding-left: 2rem; padding-right: 2rem;
+        }
+
+        .budget-form h3 {
+            color: #002b7f; margin-bottom: 2rem; font-size: 1.3rem; font-weight: 700;
+        }
+
+        .form-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.8rem; margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex; flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.8rem; font-weight: 700; color: #333; margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 14px; border: 2px solid #ddd; border-radius: 8px;
+            font-size: 1rem; font-family: inherit; transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none; border-color: #002b7f; box-shadow: 0 0 0 3px rgba(0,43,127,0.1);
+        }
+
+        .form-group input[type="number"] {
+            font-size: 1.1rem;
+        }
+
+        .error-message {
+            font-size: 0.75rem; color: #dc3545; margin-top: 0.5rem; display: none; font-weight: 600;
+        }
+
+        .error-message.show { display: block; }
+
+        .valid-checkmark {
+            font-size: 0.75rem; color: #28a745; margin-top: 0.5rem; display: none; font-weight: 600;
+        }
+
+        .valid-checkmark.show { display: block; }
+
+        .btn-primary {
+            background: #002b7f; color: white; padding: 14px 28px;
+            border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+            font-size: 1rem; transition: all 0.3s; width: 100%;
+        }
+
+        .btn-primary:hover { background: #003d99; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,43,127,0.3); }
+
+        .btn-primary:disabled {
+            background: #bbb; cursor: not-allowed; transform: none;
+        }
+
+        .budget-table {
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,43,127,0.08);
+            max-width: 1200px; margin-left: auto; margin-right: auto;
+            padding: 0 2rem;
+        }
+
+        .budget-table table {
+            width: 100%; border-collapse: collapse;
+        }
+
+        .budget-table thead {
+            background: linear-gradient(135deg, #002b7f 0%, #003d99 100%);
+            color: white;
+        }
+
+        .budget-table th {
+            padding: 1.3rem; text-align: left; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .budget-table td {
+            padding: 1.2rem 1.3rem; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem;
+        }
+
+        .budget-table tbody tr:hover {
+            background: #f8f9fb;
+        }
+
+        .budget-table .amount {
+            font-weight: 700; color: #002b7f; font-size: 1rem;
+        }
+
+        /* Mobile card layout for expenses */
+        @media (max-width: 900px) {
+            .budget-table table {
+                display: none;
+            }
+
+            .budget-table {
+                padding: 0 0.5rem;
+            }
+
+            .expenses-cards {
+                display: flex;
+                flex-direction: column;
+                gap: 1.2rem;
+            }
+
+            .expense-card {
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 12px;
+                padding: 1.5rem;
+                box-shadow: 0 2px 8px rgba(0,43,127,0.06);
+            }
+
+            .expense-card-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.8rem;
+                padding-bottom: 0.8rem;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .expense-card-row:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+            .expense-card-label {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #888;
+            }
+
+            .expense-card-value {
+                font-weight: 600;
+                color: #333;
+            }
+
+            .expense-card-actions {
+                display: flex;
+                gap: 0.8rem;
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid #f0f0f0;
+            }
+
+            .expense-card-actions button {
+                flex: 1;
+            }
+        }
+
+        .category-badge {
+            display: inline-block; padding: 6px 14px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 700; white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .category-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .category-badge.flights { background: #e3f2fd; color: #002b7f; }
+        .category-badge.transportation { background: #f3e5f5; color: #6a1b9a; }
+        .category-badge.travel-agency { background: #e0f2f1; color: #00695c; }
+        .category-badge.accommodation { background: #ffebee; color: #c62828; }
+        .category-badge.food { background: #fff3e0; color: #e65100; }
+        .category-badge.other { background: #f5f5f5; color: #616161; }
+
+        .table-actions {
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 8px 12px; font-size: 0.8rem; border: none;
+            border-radius: 6px; cursor: pointer; transition: all 0.3s;
+            min-width: 40px; font-weight: 700;
+        }
+
+        @media (min-width: 768px) {
+            .table-actions {
+                flex-direction: row;
+            }
+        }
+
+        .btn-edit {
+            background: #ffc107; color: #333; font-weight: 700;
+        }
+
+        .btn-edit:hover { background: #ffb300; transform: translateY(-2px); box-shadow: 0 2px 8px rgba(255,193,7,0.3); }
+
+        .btn-delete {
+            background: #dc3545; color: white; font-weight: 700;
+        }
+
+        .btn-delete:hover { background: #c82333; transform: translateY(-2px); box-shadow: 0 2px 8px rgba(220,53,69,0.3); }
+
+        .no-data {
+            text-align: center; padding: 2rem; color: #999;
+        }
+
+        .totals-row {
+            background: #f9f9f9; font-weight: 700;
+        }
+
+        /* ===== PASSWORD PROTECTION STYLES ===== */
+        .password-gate {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 500px;
+        }
+
+        .password-form-box {
+            background: white; padding: 3.5rem; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,43,127,0.12); text-align: center;
+            width: 90%; max-width: 420px;
+        }
+
+        .password-form-box h3 {
+            color: #002b7f; margin-bottom: 0.8rem; font-size: 1.6rem; font-weight: 700;
+        }
+
+        .password-form-box p {
+            color: #666; margin-bottom: 2rem; font-size: 0.95rem; line-height: 1.6;
+        }
+
+        .password-input-wrapper {
+            position: relative; margin-bottom: 2.2rem;
+        }
+
+        .password-input-wrapper input {
+            width: 100%; padding: 14px 45px 14px 14px; border: 2px solid #ddd;
+            border-radius: 8px; font-size: 1.1rem; font-family: inherit; transition: all 0.3s;
+        }
+
+        .password-input-wrapper input:focus {
+            outline: none; border-color: #002b7f; box-shadow: 0 0 0 3px rgba(0,43,127,0.1);
+        }
+
+        .toggle-password {
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%); background: none; border: none;
+            cursor: pointer; font-size: 1.3rem; color: #666; transition: color 0.3s;
+        }
+
+        .toggle-password:hover { color: #002b7f; }
+
+        .password-error {
+            color: #dc3545; font-size: 0.9rem; margin-bottom: 1.5rem; display: none; font-weight: 600;
+        }
+
+        .password-error.show { display: block; }
+
+        .password-form-box .btn-primary {
+            margin-bottom: 1.5rem;
+        }
+
+        .first-time-setup {
+            font-size: 0.85rem; color: #999; margin-top: 2rem;
+            padding-top: 2rem; border-top: 1px solid #e0e0e0;
+        }
+
+        .budget-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2.5rem; max-width: 1200px; margin-left: auto; margin-right: auto;
+            padding: 0 2rem;
+        }
+
+        .budget-header h2 {
+            color: #002b7f; font-size: 1.8rem; font-weight: 700;
+        }
+
+        .btn-logout {
+            background: #dc3545; color: white; padding: 11px 22px;
+            border: none; border-radius: 8px; cursor: pointer;
+            font-size: 0.9rem; font-weight: 700; transition: all 0.3s;
+        }
+
+        .btn-logout:hover { background: #c82333; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(220,53,69,0.3); }
+
+        .security-notice {
+            background: linear-gradient(135deg, #fffbeb 0%, #fff3cd 100%); border: 2px solid #fbbf24; padding: 1.5rem;
+            border-radius: 10px; margin-bottom: 2.5rem; font-size: 0.9rem;
+            color: #92400e; max-width: 1200px; margin-left: auto; margin-right: auto;
+            padding-left: 2rem; padding-right: 2rem;
+        }
+
+        .security-notice strong { display: block; margin-bottom: 0.7rem; font-weight: 700; }
+
+        @media (max-width: 900px) {
+            .budget-summary {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                margin-left: 1rem;
+                margin-right: 1rem;
+            }
+
+            .chart-container {
+                margin-left: 1rem;
+                margin-right: 1rem;
+                padding: 2rem 1.5rem;
+            }
+
+            .budget-form {
+                margin-left: 1rem;
+                margin-right: 1rem;
+                padding: 2rem 1.5rem;
+            }
+
+            .budget-table {
+                margin-left: 1rem;
+                margin-right: 1rem;
+                padding: 0;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-primary {
+                padding: 12px 20px;
+            }
+
+            .budget-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.2rem;
+                margin-left: 1rem;
+                margin-right: 1rem;
+            }
+
+            .security-notice {
+                margin-left: 1rem;
+                margin-right: 1rem;
+                padding: 1.2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .budget-summary {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+            }
+
+            .chart-container {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+                padding: 1.5rem 1rem;
+                min-height: 350px;
+            }
+
+            .budget-form {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+                padding: 1.5rem 1rem;
+            }
+
+            .budget-table {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+            }
+
+            .budget-header {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+            }
+
+            .security-notice {
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+                padding: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .flight-container {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+
+            .btn-small {
+                padding: 7px 10px;
+                font-size: 0.75rem;
+            }
+
+            .expense-card-actions {
+                gap: 0.6rem;
+            }
+
+            .expense-card-actions button {
+                font-size: 0.75rem;
+                padding: 6px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>COSTA RICA 2026</h1>
+        <p>March 18 – April 6 · Family Adventure</p>
+        <div class="nav-buttons" style="margin-top: 0.8rem;">
+            <button class="nav-btn active" onclick="showPage('map')">🗺️ Map</button>
+            <button class="nav-btn" onclick="showPage('flights')">✈️ Flights</button>
+            <button class="nav-btn" onclick="showPage('budget')">💰 Budget</button>
+        </div>
+    </div>
+
+    <!-- PAGE: MAP -->
+    <div id="page-map" class="page-container active">
+        <div id="map"></div>
+        <button class="center-button" onclick="centerMap()">🎯 Full Route</button>
+        <div class="floating-icons">
+            <button class="floating-btn" onclick="showPage('flights')" title="Flight Tracker">
+                ✈️
+                <span class="floating-btn-label">Flights</span>
+            </button>
+            <button class="floating-btn" onclick="showPage('budget')" title="Budget Tracker">
+                💰
+                <span class="floating-btn-label">Budget</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PAGE: FLIGHTS -->
+    <div id="page-flights" class="page-container">
+        <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h2 style="color: #002b7f; margin-bottom: 1.5rem;">✈️ Flight Details & Status</h2>
+            <div id="flights-content" style="text-align: center; padding: 2rem; color: #999;">
+                Loading flight information...
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE: BUDGET -->
+    <div id="page-budget" class="page-container">
+        <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <!-- PASSWORD GATE (shown when not authenticated) -->
+            <div id="password-gate" class="password-gate">
+                <div class="password-form-box">
+                    <h3>🔒 Budget Access</h3>
+                    <p>Enter password to access budget tracker</p>
+                    <div id="password-error" class="password-error"></div>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password-input" placeholder="Enter password" onkeypress="if(event.key==='Enter') BudgetUIManager.submitPassword()">
+                        <button class="toggle-password" onclick="BudgetUIManager.togglePasswordVisibility()">👁️</button>
+                    </div>
+                    <button class="btn-primary" onclick="BudgetUIManager.submitPassword()">Enter</button>
+                    <div class="first-time-setup">First time? Enter a password to set it up.</div>
+                </div>
+            </div>
+
+            <!-- BUDGET CONTENT (shown when authenticated) -->
+            <div id="budget-content" style="display: none;">
+                <div class="budget-header">
+                    <h2 style="margin: 0;">💰 Budget & Expense Tracker</h2>
+                    <button class="btn-logout" onclick="BudgetUIManager.logout()">🚪 Logout</button>
+                </div>
+
+            <!-- Chart Dashboard -->
+            <div class="chart-container">
+                <canvas id="expense-chart"></canvas>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="budget-summary">
+                <div class="summary-card">
+                    <div class="summary-label">Total Spent</div>
+                    <div class="summary-value" id="total-spent">$0.00</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Budget</div>
+                    <div class="summary-value" id="total-budget">$0.00</div>
+                    <button class="btn-edit-budget" onclick="BudgetUIManager.openBudgetModal()" title="Edit budget">✎</button>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-label">Remaining</div>
+                    <div class="summary-value" id="remaining-budget">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Budget Edit Modal -->
+            <div class="budget-modal" id="budget-modal">
+                <div class="budget-modal-content">
+                    <h3>Set Budget</h3>
+                    <input type="number" id="budget-input" class="budget-modal-input" placeholder="Enter budget amount" step="0.01" min="0">
+                    <div class="budget-modal-buttons">
+                        <button class="btn-save" onclick="BudgetUIManager.saveBudget()">Save</button>
+                        <button class="btn-close-modal" onclick="BudgetUIManager.closeBudgetModal()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add/Edit Expense Form -->
+            <div class="budget-form">
+                <h3 id="form-title">➕ Add New Expense</h3>
+                <form id="expense-form">
+                    <input type="hidden" id="expense-id" value="">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="exp-date">Date</label>
+                            <input type="date" id="exp-date" required min="2026-03-18" max="2026-04-06">
+                            <span class="error-message" id="exp-date-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exp-category">Category</label>
+                            <select id="exp-category" required>
+                                <option value="">Select category</option>
+                                <option value="Flights">Flights</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Travel agency">Travel Agency</option>
+                                <option value="Accommodation">Accommodation</option>
+                                <option value="Food">Food</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span class="error-message" id="exp-category-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exp-amount">Amount</label>
+                            <input type="number" id="exp-amount" placeholder="0.00" step="0.01" required>
+                            <span class="error-message" id="exp-amount-error"></span>
+                            <span class="valid-checkmark" id="exp-amount-valid"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exp-currency">Currency</label>
+                            <select id="exp-currency" required>
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="ILS">ILS (₪)</option>
+                                <option value="CRC">CRC (₡)</option>
+                                <option value="MXN">MXN (Mex$)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="exp-description">Description (optional)</label>
+                            <input type="text" id="exp-description" placeholder="e.g., Hotel booking, Flight tickets...">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn-primary" id="form-submit-btn">Add Expense</button>
+                        <button type="button" class="btn-primary" id="form-cancel-btn" style="background: #999; display: none;" onclick="BudgetUIManager.cancelEdit()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+                <!-- Expenses Table -->
+                <div class="budget-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Currency</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-tbody">
+                            <tr><td colspan="6" class="no-data">No expenses yet. Add your first expense above!</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay-backdrop" id="overlay-backdrop"></div>
+    <div class="overlay-card" id="overlay-card"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+    // ===== BUDGET UI MANAGER =====
+    var BudgetUIManager = {
+        chartInstance: null,
+
+        categoryColors: {
+            'Flights': '#002b7f',
+            'Transportation': '#6a1b9a',
+            'Travel agency': '#00695c',
+            'Accommodation': '#c62828',
+            'Food': '#e65100',
+            'Other': '#616161'
+        },
+
+        categoryIcons: {
+            'Flights': '✈️',
+            'Transportation': '🚗',
+            'Travel agency': '🏢',
+            'Accommodation': '🏨',
+            'Food': '🍽️',
+            'Other': '📌'
+        },
+
+        renderChart: function() {
+            var totals = ExpenseManager.getTotalByCategory();
+            var labels = [];
+            var data = [];
+            var colors = [];
+
+            ExpenseManager.categories.forEach(function(cat) {
+                if (totals[cat] > 0) {
+                    labels.push(cat);
+                    data.push(totals[cat]);
+                    colors.push(BudgetUIManager.categoryColors[cat]);
+                }
+            });
+
+            var ctx = document.getElementById('expense-chart').getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (BudgetUIManager.chartInstance) {
+                BudgetUIManager.chartInstance.destroy();
+            }
+
+            BudgetUIManager.chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: 'white',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { size: 12, weight: '600' },
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                    var percentage = Math.round((context.parsed * 100 / total) * 10) / 10;
+                                    return context.label + ': $' + context.parsed.toFixed(2) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        },
+
+        validation: {
+            amount: function(value) {
+                var num = parseFloat(value);
+                return !isNaN(num) && num > 0 && /^\d+(\.\d{1,2})?$/.test(value);
+            },
+            category: function(value) {
+                return ExpenseManager.categories.includes(value);
+            },
+            date: function(value) {
+                var date = new Date(value);
+                var tripStart = new Date('2026-03-18');
+                var tripEnd = new Date('2026-04-06');
+                return date >= tripStart && date <= tripEnd;
+            }
+        },
+
+        renderTable: function() {
+            var tbody = document.getElementById('expenses-tbody');
+            var tableContainer = document.querySelector('.budget-table');
+            var allExpenses = ExpenseManager.getAllExpenses();
+            var isMobile = window.innerWidth <= 900;
+
+            if (allExpenses.length === 0) {
+                if (isMobile) {
+                    // Mobile: show card layout with no-data message
+                    var cardsContainer = '<div class="expenses-cards"><div style="text-align: center; padding: 2rem; color: #999;">No expenses yet. Add your first expense above!</div></div>';
+                    tableContainer.innerHTML = cardsContainer;
+                } else {
+                    // Desktop: show table with no-data message
+                    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No expenses yet. Add your first expense above!</td></tr>';
+                }
+            } else {
+                if (isMobile) {
+                    // Mobile card layout
+                    var cardsHtml = '<div class="expenses-cards">';
+                    var totals = {};
+
+                    allExpenses.forEach(function(exp) {
+                        var date = new Date(exp.date);
+                        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        var formattedDate = date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+                        var categoryClass = exp.category.toLowerCase().replace(/\s+/g, '-');
+                        var categoryIcon = BudgetUIManager.categoryIcons[exp.category] || '📌';
+
+                        cardsHtml += '<div class="expense-card">';
+                        cardsHtml += '<div class="expense-card-row"><span class="expense-card-label">Date</span><span class="expense-card-value">' + formattedDate + '</span></div>';
+                        cardsHtml += '<div class="expense-card-row"><span class="expense-card-label">Category</span><span class="category-badge ' + categoryClass + '">' + categoryIcon + ' ' + exp.category + '</span></div>';
+                        cardsHtml += '<div class="expense-card-row"><span class="expense-card-label">Amount</span><span class="amount">' + exp.currency + ' ' + exp.amount.toFixed(2) + '</span></div>';
+                        if (exp.description) {
+                            cardsHtml += '<div class="expense-card-row"><span class="expense-card-label">Notes</span><span class="expense-card-value">' + exp.description + '</span></div>';
+                        }
+                        cardsHtml += '<div class="expense-card-actions">';
+                        cardsHtml += '<button class="btn-small btn-edit" title="Edit" onclick="BudgetUIManager.editExpense(\'' + exp.id + '\');">✎ Edit</button>';
+                        cardsHtml += '<button class="btn-small btn-delete" title="Delete" onclick="if(confirm(\'Delete this expense?\')) { ExpenseManager.deleteExpense(\'' + exp.id + '\'); BudgetUIManager.renderTable(); BudgetUIManager.updateSummary(); BudgetUIManager.renderChart(); }">− Delete</button>';
+                        cardsHtml += '</div>';
+                        cardsHtml += '</div>';
+
+                        if (!totals[exp.category]) totals[exp.category] = 0;
+                        totals[exp.category] += exp.amount;
+                    });
+
+                    cardsHtml += '</div>';
+                    tableContainer.innerHTML = cardsHtml;
+                } else {
+                    // Desktop table layout
+                    var html = '';
+                    var totals = {};
+
+                    allExpenses.forEach(function(exp) {
+                        var date = new Date(exp.date);
+                        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        var formattedDate = date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+
+                        var categoryClass = exp.category.toLowerCase().replace(/\s+/g, '-');
+                        var categoryIcon = BudgetUIManager.categoryIcons[exp.category] || '📌';
+
+                        html += '<tr>';
+                        html += '<td>' + formattedDate + '</td>';
+                        html += '<td><span class="category-badge ' + categoryClass + '">' + categoryIcon + ' ' + exp.category + '</span></td>';
+                        html += '<td class="amount">' + exp.currency + ' ' + exp.amount.toFixed(2) + '</td>';
+                        html += '<td>' + exp.currency + '</td>';
+                        html += '<td>' + (exp.description || '—') + '</td>';
+                        html += '<td class="table-actions">';
+                        html += '<button class="btn-small btn-edit" title="Edit entry" onclick="BudgetUIManager.editExpense(\'' + exp.id + '\');">✎</button>';
+                        html += '<button class="btn-small btn-delete" title="Delete entry" onclick="if(confirm(\'Delete this expense?\')) { ExpenseManager.deleteExpense(\'' + exp.id + '\'); BudgetUIManager.renderTable(); BudgetUIManager.updateSummary(); BudgetUIManager.renderChart(); }">−</button>';
+                        html += '</td>';
+                        html += '</tr>';
+
+                        if (!totals[exp.category]) totals[exp.category] = 0;
+                        totals[exp.category] += exp.amount;
+                    });
+
+                    // Add totals row
+                    var totalSpent = ExpenseManager.getTotalSpent();
+                    html += '<tr class="totals-row">';
+                    html += '<td colspan="2" style="text-align: right; padding-right: 1rem;">TOTAL</td>';
+                    html += '<td class="amount">$' + totalSpent.toFixed(2) + '</td>';
+                    html += '<td colspan="3"></td>';
+                    html += '</tr>';
+
+                    tbody.innerHTML = html;
+                }
+            }
+
+            this.renderChart();
+        },
+
+        updateSummary: function() {
+            var totalSpent = ExpenseManager.getTotalSpent();
+            document.getElementById('total-spent').textContent = '$' + totalSpent.toFixed(2);
+            document.getElementById('total-budget').textContent = '$' + tripBudget.toFixed(2);
+            var remaining = tripBudget - totalSpent;
+            document.getElementById('remaining-budget').textContent = '$' + remaining.toFixed(2);
+        },
+
+        openBudgetModal: function() {
+            document.getElementById('budget-input').value = tripBudget;
+            document.getElementById('budget-modal').classList.add('active');
+            document.getElementById('budget-input').focus();
+        },
+
+        closeBudgetModal: function() {
+            document.getElementById('budget-modal').classList.remove('active');
+        },
+
+        saveBudget: function() {
+            var budgetValue = parseFloat(document.getElementById('budget-input').value);
+
+            if (isNaN(budgetValue) || budgetValue < 0) {
+                alert('Please enter a valid budget amount');
+                return;
+            }
+
+            tripBudget = budgetValue;
+            StorageManager.save('crTripBudget', tripBudget);
+            this.updateSummary();
+            this.closeBudgetModal();
+        },
+
+        setupFormValidation: function() {
+            var form = document.getElementById('expense-form');
+            var amountInput = document.getElementById('exp-amount');
+
+            amountInput.addEventListener('input', function() {
+                var isValid = BudgetUIManager.validation.amount(this.value);
+                var errorEl = document.getElementById('exp-amount-error');
+                var checkEl = document.getElementById('exp-amount-valid');
+
+                if (this.value === '') {
+                    errorEl.classList.remove('show');
+                    checkEl.classList.remove('show');
+                } else if (isValid) {
+                    errorEl.classList.remove('show');
+                    checkEl.classList.add('show');
+                } else {
+                    errorEl.textContent = 'Enter valid amount (e.g., 1200.50)';
+                    errorEl.classList.add('show');
+                    checkEl.classList.remove('show');
+                }
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                var formData = {
+                    date: document.getElementById('exp-date').value,
+                    amount: document.getElementById('exp-amount').value,
+                    currency: document.getElementById('exp-currency').value,
+                    category: document.getElementById('exp-category').value,
+                    description: document.getElementById('exp-description').value
+                };
+
+                var errors = [];
+                if (!BudgetUIManager.validation.date(formData.date)) errors.push('Date must be within trip dates');
+                if (!BudgetUIManager.validation.amount(formData.amount)) errors.push('Invalid amount');
+                if (!BudgetUIManager.validation.category(formData.category)) errors.push('Invalid category');
+
+                if (errors.length > 0) {
+                    alert('Please fix these errors:\n' + errors.join('\n'));
+                    return;
+                }
+
+                var expenseId = document.getElementById('expense-id').value;
+
+                if (expenseId) {
+                    // Editing existing expense
+                    ExpenseManager.editExpense(expenseId, formData);
+                    BudgetUIManager.cancelEdit();
+                } else {
+                    // Adding new expense
+                    ExpenseManager.addExpense(formData);
+                }
+
+                BudgetUIManager.renderTable();
+                BudgetUIManager.updateSummary();
+                BudgetUIManager.renderChart();
+                form.reset();
+                document.getElementById('exp-amount-valid').classList.remove('show');
+            });
+        },
+
+        editExpense: function(expenseId) {
+            var expense = expenses.find(function(e) { return e.id === expenseId; });
+            if (!expense) return;
+
+            // Populate form with expense data
+            document.getElementById('expense-id').value = expense.id;
+            document.getElementById('exp-date').value = expense.date;
+            document.getElementById('exp-category').value = expense.category;
+            document.getElementById('exp-amount').value = expense.amount;
+            document.getElementById('exp-currency').value = expense.currency;
+            document.getElementById('exp-description').value = expense.description;
+
+            // Update form UI for edit mode
+            document.getElementById('form-title').textContent = '✏️ Edit Expense';
+            document.getElementById('form-submit-btn').textContent = 'Update Expense';
+            document.getElementById('form-cancel-btn').style.display = 'block';
+
+            // Scroll to form
+            document.getElementById('expense-form').scrollIntoView({ behavior: 'smooth' });
+        },
+
+        cancelEdit: function() {
+            // Clear form
+            document.getElementById('expense-id').value = '';
+            document.getElementById('expense-form').reset();
+
+            // Reset form UI
+            document.getElementById('form-title').textContent = '➕ Add New Expense';
+            document.getElementById('form-submit-btn').textContent = 'Add Expense';
+            document.getElementById('form-cancel-btn').style.display = 'none';
+            document.getElementById('exp-amount-valid').classList.remove('show');
+        },
+
+        togglePasswordVisibility: function() {
+            var input = document.getElementById('password-input');
+            var btn = document.querySelector('.toggle-password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        },
+
+        submitPassword: async function() {
+            var password = document.getElementById('password-input').value;
+            var errorEl = document.getElementById('password-error');
+
+            if (!password) {
+                errorEl.textContent = 'Please enter a password';
+                errorEl.classList.add('show');
+                return;
+            }
+
+            var isAuthenticated = await PasswordManager.authenticate(password);
+
+            if (isAuthenticated) {
+                errorEl.classList.remove('show');
+                this.showBudgetContent();
+                document.getElementById('password-input').value = '';
+            } else {
+                errorEl.textContent = 'Invalid password. Try again.';
+                errorEl.classList.add('show');
+                document.getElementById('password-input').value = '';
+            }
+        },
+
+        logout: function() {
+            PasswordManager.logout();
+            document.getElementById('password-gate').style.display = 'flex';
+            document.getElementById('budget-content').style.display = 'none';
+            document.getElementById('password-input').value = '';
+            document.getElementById('password-error').classList.remove('show');
+            document.getElementById('password-input').type = 'password';
+            document.querySelector('.toggle-password').textContent = '👁️';
+        },
+
+        showBudgetContent: function() {
+            document.getElementById('password-gate').style.display = 'none';
+            document.getElementById('budget-content').style.display = 'block';
+        },
+
+        init: function() {
+            // Check if already authenticated (unlikely but possible)
+            if (PasswordManager.isAuthenticated()) {
+                this.showBudgetContent();
+            }
+
+            // Always show password gate first
+            document.getElementById('password-gate').style.display = 'flex';
+            document.getElementById('budget-content').style.display = 'none';
+
+            // Render table and summary (they're hidden until authenticated)
+            this.renderTable();
+            this.updateSummary();
+            this.setupFormValidation();
+
+            // Re-render table on window resize to switch between table/card layout
+            if (!window.budgetResizeListener) {
+                window.budgetResizeListener = true;
+                window.addEventListener('resize', function() {
+                    if (document.getElementById('budget-content').style.display !== 'none') {
+                        BudgetUIManager.renderTable();
+                    }
+                });
+            }
+        }
+    };
+
+    // ===== PAGE NAVIGATION SYSTEM =====
+    var currentPage = 'map';
+
+    function showPage(pageName) {
+        // Hide all pages
+        document.querySelectorAll('.page-container').forEach(function(page) {
+            page.classList.remove('active');
+        });
+
+        // Show selected page
+        document.getElementById('page-' + pageName).classList.add('active');
+        currentPage = pageName;
+
+        // Update navigation buttons
+        document.querySelectorAll('.nav-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+
+        // Find the button that matches the page and activate it
+        var buttons = document.querySelectorAll('.nav-btn');
+        buttons.forEach(function(btn) {
+            if (btn.textContent.toLowerCase().includes(pageName === 'map' ? 'map' : (pageName === 'flights' ? 'flights' : 'budget'))) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Initialize page-specific content
+        if (pageName === 'flights') {
+            FlightDetailsManager.init();
+        } else if (pageName === 'budget') {
+            BudgetUIManager.init();
+        }
+    }
+
+    // ===== STORAGE MANAGER =====
+    var StorageManager = {
+        save: function(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                return true;
+            } catch (e) {
+                console.error('Storage quota exceeded:', e);
+                alert('Storage quota exceeded. Some data may not persist.');
+                return false;
+            }
+        },
+        load: function(key, defaultValue) {
+            try {
+                var data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
+            } catch (e) {
+                console.error('Storage read error:', e);
+                return defaultValue;
+            }
+        },
+        remove: function(key) {
+            try {
+                localStorage.removeItem(key);
+                return true;
+            } catch (e) {
+                console.error('Storage remove error:', e);
+                return false;
+            }
+        }
+    };
+
+    // ===== TRIP DATA — V3 (Tamarindo, correct coordinates) =====
+    var tripData = [
+        {
+            station: 1, name: "San Jose / Heredia",
+            lat: 10.0500, lng: -84.1200,
+            dates: "March 18–20", nights: 2,
+            travelers: "Han & Mirit",
+            accommodation: "Country Inn & Suite",
+            accommodationUrl: "https://www.countryinn.com/",
+            instagramSearch: "https://www.instagram.com/explore/tags/herediacostarica/",
+            activities: [
+                { date: "Mar 18", text: "Arrival 4:35 PM at SJO, transfer to hotel" },
+                { date: "Mar 19", text: "Pick up rental car" },
+                { date: "Mar 19", text: '<a href="https://www.sinac.go.cr/" target="_blank">Poás Volcano</a> tour' },
+                { date: "Mar 19", text: '<a href="https://www.waterfallgardens.com/" target="_blank">La Paz Waterfalls</a> — butterflies, hummingbirds, orchids' }
+            ]
+        },
+        {
+            station: 2, name: "Puerto Viejo",
+            lat: 9.6560, lng: -82.7537,
+            dates: "March 20–23", nights: 3,
+            travelers: "Han, Mirit & Ely",
+            travelersNote: "Ely arrives from Sydney",
+            accommodation: "Cariblue Beach Club",
+            accommodationUrl: "https://cariblue.com/en/",
+            instagramSearch: "https://www.instagram.com/explore/tags/puertoviejocostarica/",
+            activities: [
+                { date: "Mar 20", text: '<a href="https://cataratadeltoro.com/" target="_blank">Catarata del Toro</a> waterfall' },
+                { date: "Mar 20", text: '<a href="https://www.instagram.com/explore/tags/rioagrio/" target="_blank">Rio Agrio waterfalls</a> & blue pools' },
+                { date: "Mar 20", text: "Drive to Puerto Viejo (~4 hrs)" },
+                { date: "Mar 21", text: '<a href="https://www.sinac.go.cr/" target="_blank">Cahuita National Park</a> — boat ride, snorkeling, beach picnic, guided jungle walk' },
+                { date: "Mar 22", text: '<a href="https://www.instagram.com/explore/tags/bribri/" target="_blank">Bribri Indigenous Reserve</a> — medicinal plants, organic agriculture, chocolate production' }
+            ]
+        },
+        {
+            station: 3, name: "Arenal / La Fortuna",
+            lat: 10.4678, lng: -84.6427,
+            dates: "March 23–27", nights: 4,
+            travelers: "All 6",
+            travelersNote: "Family reunion! Gaya & Dandan from TLV · Lia from South America",
+            accommodation: "Arenal Paraiso",
+            accommodationUrl: "https://arenalparaisoresort.com/en/",
+            instagramSearch: "https://www.instagram.com/explore/tags/arenalcostarica/",
+            activities: [
+                { date: "Mar 23", text: '<a href="https://www.jaguarrescue.foundation/" target="_blank">Jaguar Rescue Center</a> (morning, 2 people)' },
+                { date: "Mar 23", text: "🎉 Family reunion day — all 6 together at last" },
+                { date: "Mar 24", text: '<a href="https://www.instagram.com/explore/tags/lafortunawaterfall/" target="_blank">La Fortuna Waterfall</a> with guide' },
+                { date: "Mar 24", text: '<a href="https://www.sinac.go.cr/" target="_blank">Arenal National Park</a> walking tour' },
+                { date: "Mar 25", text: '<a href="https://www.sinac.go.cr/" target="_blank">Tenorio Volcano NP / Rio Celeste</a> — 4-hour hike (~7km)' },
+                { date: "Mar 25", text: '<a href="https://www.baldihotsprings.cr/" target="_blank">Baldi Hot Springs</a> (evening)' },
+                { date: "Mar 26", text: '<a href="https://www.instagram.com/explore/tags/balsariverrafting/" target="_blank">Rafting on Balsa River</a> — grade 2-3' },
+                { date: "Mar 26", text: '<a href="https://www.instagram.com/explore/tags/canyoningcostarica/" target="_blank">Canyoning</a> in cloud forest, Super Tarzan swing, natural pools' }
+            ]
+        },
+        {
+            station: 4, name: "Monteverde",
+            lat: 10.3100, lng: -84.8250,
+            dates: "March 27–29", nights: 2,
+            travelers: "All 6",
+            accommodation: "El Establo",
+            accommodationUrl: "https://elestablo.com/",
+            instagramSearch: "https://www.instagram.com/explore/tags/monteverdecostarica/",
+            activities: [
+                { date: "Mar 27", text: "Drive from Arenal (~3 hrs)" },
+                { date: "Mar 27", text: '<a href="https://donjuantoursmonteverde.com/en/" target="_blank">Don Juan Farm</a> — coffee, chocolate, sugar cane' },
+                { date: "Mar 27", text: '<a href="https://www.instagram.com/explore/tags/monteverdecloudforest/" target="_blank">Cloud forest night tour</a>' },
+                { date: "Mar 28", text: '<a href="https://www.instagram.com/explore/tags/monteverdehanging/" target="_blank">Hanging bridges trail</a> (1.9 mi)' },
+                { date: "Mar 28", text: '<a href="https://skyadventures.travel/" target="_blank">Sky Adventures</a> — sky tram cable car + canopy ziplines' }
+            ]
+        },
+        {
+            station: 5, name: "Tamarindo",
+            lat: 10.3023, lng: -85.8325,
+            dates: "March 29 – April 2", nights: 4,
+            travelers: "All 6",
+            accommodation: "Casa Cloud Nine",
+            accommodationUrl: "https://bestystays.com/",
+            instagramSearch: "https://www.instagram.com/explore/tags/tamarindocostarica/",
+            isSuggestions: true,
+            activities: [
+                { date: "Mar 29", text: "Drive from Monteverde (~3 hrs), settle into villa, explore town & beach" },
+                { date: "Mar 30–Apr 1", text: '🏄 <a href="https://www.instagram.com/explore/tags/tamarindosurf/" target="_blank">Surf lessons</a> at Tamarindo Beach' },
+                { date: "Mar 30–Apr 1", text: '⛵ <a href="https://www.instagram.com/explore/tags/tamarindosunset/" target="_blank">Sunset catamaran sailing</a> tour' },
+                { date: "Mar 30–Apr 1", text: '🐴 <a href="https://www.instagram.com/explore/tags/costaricahorseback/" target="_blank">Horseback riding</a> on the beach' },
+                { date: "Mar 30–Apr 1", text: '🤿 <a href="https://www.instagram.com/explore/tags/tamarindodiving/" target="_blank">Snorkeling & diving</a> at Catalina Islands' },
+                { date: "Mar 30–Apr 1", text: '🛶 <a href="https://www.instagram.com/explore/tags/tamarindokayak/" target="_blank">Estuary kayaking</a> & wildlife tour' },
+                { date: "Mar 30–Apr 1", text: '🏐 <a href="https://www.instagram.com/explore/tags/tamarindobeach/" target="_blank">Beach volleyball & SUP</a>' },
+                { date: "Mar 30–Apr 1", text: '🐢 <a href="https://www.instagram.com/explore/tags/playagrande/" target="_blank">Playa Grande / Las Baulas NP</a> — leatherback turtle nesting' },
+                { date: "Mar 30–Apr 1", text: '🌙 <a href="https://www.instagram.com/explore/tags/tamarindonightlife/" target="_blank">Nightlife & beach parties</a>' },
+                { date: "Mar 30–Apr 1", text: '🥾 <a href="https://www.instagram.com/explore/tags/playaconchal/" target="_blank">Hiking to Playa Conchal</a>' }
+            ]
+        },
+        {
+            station: 6, name: "Manuel Antonio",
+            lat: 9.3925, lng: -84.1365,
+            dates: "April 2–5", nights: 3,
+            travelers: "All 6",
+            accommodation: "La Mariposa",
+            accommodationUrl: "https://lamariposa.com/hotelcostarica/",
+            instagramSearch: "https://www.instagram.com/explore/tags/manuelantoniocostarica/",
+            activities: [
+                { date: "Apr 2", text: "Drive from Tamarindo (~4.5 hrs)" },
+                { date: "Apr 2", text: '🐊 <a href="https://www.instagram.com/explore/tags/tarcolesbridge/" target="_blank">Crocodile safari at Tárcoles</a> (en route)' },
+                { date: "Apr 3", text: '<a href="https://www.sinac.go.cr/" target="_blank">Manuel Antonio National Park</a> — guided tour (monkeys, sloths, beaches)' },
+                { date: "Apr 3", text: '🚤 <a href="https://www.instagram.com/explore/tags/manuelantonioadventure/" target="_blank">Jet ski adventure</a> (afternoon)' },
+                { date: "Apr 4", text: '🏎️ <a href="https://www.instagram.com/explore/tags/costaricaatv/" target="_blank">ATV / buggy riding</a>' },
+                { date: "Apr 4", text: '🛶 <a href="https://www.instagram.com/explore/tags/damisland/" target="_blank">Damas Island mangrove tour</a>' }
+            ]
+        },
+        {
+            station: 7, name: "San Jose",
+            lat: 9.9500, lng: -84.1100,
+            dates: "April 5–6", nights: 1,
+            travelers: "All 6",
+            accommodation: "Country Inn & Suite",
+            accommodationUrl: "https://www.countryinn.com/",
+            instagramSearch: "https://www.instagram.com/explore/tags/sanjosecostarica/",
+            activities: [
+                { date: "Apr 5", text: "Drive from Manuel Antonio (~3.5 hrs)" },
+                { date: "Apr 5", text: "Last evening together 🥂" },
+                { date: "Apr 6", text: "✈️ Transfer to SJO (20 min). Flight IB4991 departs 10:25 AM → Miami → Madrid → TLV" }
+            ]
+        }
+    ];
+
+    // ===== AIRPORT MAPPING =====
+    var airportCodes = {
+        'TLV': 'Tel Aviv',
+        'MAD': 'Madrid',
+        'SJO': 'San José',
+        'MIA': 'Miami',
+        'SYD': 'Sydney',
+        'BRA': 'Brazil',
+        'YYZ': 'Toronto'
+    };
+
+    // ===== FLIGHT DATA (Multi-leg journeys) =====
+    var flightData = [
+        {
+            participant: "Han",
+            outbound: [
+                {
+                    flightNo: "IB 1874", airline: "Iberia Express", aircraft: "A321NEO",
+                    departure: { date: "2026-03-18", time: "06:00", airport: "TLV" },
+                    arrival: { date: "2026-03-18", time: "10:30", airport: "MAD" },
+                    duration: "5h 30m", seat: "24D", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 243", airline: "Iberia", aircraft: "A350-900",
+                    departure: { date: "2026-03-18", time: "12:25", airport: "MAD" },
+                    arrival: { date: "2026-03-18", time: "16:35", airport: "SJO" },
+                    duration: "11h 10m", seat: "24D", status: "confirmed",
+                    connectionTime: "1h 55m"
+                }
+            ],
+            return: [
+                {
+                    flightNo: "IB 4991", airline: "American Airlines", aircraft: "B737-800",
+                    departure: { date: "2026-04-06", time: "10:25", airport: "SJO" },
+                    arrival: { date: "2026-04-06", time: "15:29", airport: "MIA" },
+                    duration: "3h 4m", seat: "23C", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 4610", airline: "American Airlines", aircraft: "B777-200",
+                    departure: { date: "2026-04-06", time: "18:15", airport: "MIA" },
+                    arrival: { date: "2026-04-07", time: "09:05", airport: "TLV" },
+                    duration: "9h 50m", seat: "23C", status: "confirmed",
+                    connectionTime: "2h 46m"
+                }
+            ]
+        },
+        {
+            participant: "Mirit",
+            outbound: [
+                {
+                    flightNo: "IB 1874", airline: "Iberia Express", aircraft: "A321NEO",
+                    departure: { date: "2026-03-18", time: "06:00", airport: "TLV" },
+                    arrival: { date: "2026-03-18", time: "10:30", airport: "MAD" },
+                    duration: "5h 30m", seat: "24H", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 243", airline: "Iberia", aircraft: "A350-900",
+                    departure: { date: "2026-03-18", time: "12:25", airport: "MAD" },
+                    arrival: { date: "2026-03-18", time: "16:35", airport: "SJO" },
+                    duration: "11h 10m", seat: "24H", status: "confirmed",
+                    connectionTime: "1h 55m"
+                }
+            ],
+            return: [
+                {
+                    flightNo: "IB 4991", airline: "American Airlines", aircraft: "B737-800",
+                    departure: { date: "2026-04-06", time: "10:25", airport: "SJO" },
+                    arrival: { date: "2026-04-06", time: "15:29", airport: "MIA" },
+                    duration: "3h 4m", seat: "23B", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 4610", airline: "American Airlines", aircraft: "B777-200",
+                    departure: { date: "2026-04-06", time: "18:15", airport: "MIA" },
+                    arrival: { date: "2026-04-07", time: "09:05", airport: "TLV" },
+                    duration: "9h 50m", seat: "23B", status: "confirmed",
+                    connectionTime: "2h 46m"
+                }
+            ]
+        },
+        {
+            participant: "Ely",
+            outbound: [{ flightNo: "TBD", airline: "TBD", departure: { airport: "SYD" }, arrival: { airport: "SJO" }, status: "pending" }],
+            return: [{ flightNo: "TBD", airline: "TBD", departure: { airport: "SJO" }, arrival: { airport: "SYD" }, status: "pending" }]
+        },
+        {
+            participant: "Gaya",
+            outbound: [
+                {
+                    flightNo: "IB 1874", airline: "Iberia Express", aircraft: "A321NEO",
+                    departure: { date: "2026-03-18", time: "06:00", airport: "TLV" },
+                    arrival: { date: "2026-03-18", time: "10:30", airport: "MAD" },
+                    duration: "5h 30m", seat: "TBD", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 243", airline: "Iberia", aircraft: "A350-900",
+                    departure: { date: "2026-03-18", time: "12:25", airport: "MAD" },
+                    arrival: { date: "2026-03-18", time: "16:35", airport: "SJO" },
+                    duration: "11h 10m", seat: "TBD", status: "confirmed",
+                    connectionTime: "1h 55m"
+                }
+            ],
+            return: [
+                {
+                    flightNo: "IB 4991", airline: "American Airlines", aircraft: "B737-800",
+                    departure: { date: "2026-04-06", time: "10:25", airport: "SJO" },
+                    arrival: { date: "2026-04-06", time: "15:29", airport: "MIA" },
+                    duration: "3h 4m", seat: "TBD", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 4610", airline: "American Airlines", aircraft: "B777-200",
+                    departure: { date: "2026-04-06", time: "18:15", airport: "MIA" },
+                    arrival: { date: "2026-04-07", time: "09:05", airport: "TLV" },
+                    duration: "9h 50m", seat: "TBD", status: "confirmed",
+                    connectionTime: "2h 46m"
+                }
+            ]
+        },
+        {
+            participant: "Lia",
+            outbound: [
+                {
+                    flightNo: "TBD", airline: "Pending",
+                    departure: { airport: "BRA" },
+                    arrival: { airport: "SJO" },
+                    status: "pending"
+                }
+            ],
+            return: [
+                {
+                    flightNo: "AC 956", airline: "Air Canada", aircraft: "B787",
+                    departure: { date: "2026-04-06", time: "07:55", airport: "SJO" },
+                    arrival: { date: "2026-04-06", time: "15:05", airport: "YYZ" },
+                    duration: "5h 10m", seat: "22D", status: "confirmed"
+                },
+                {
+                    flightNo: "AC 80", airline: "Air Canada", aircraft: "B787",
+                    departure: { date: "2026-04-06", time: "16:45", airport: "YYZ" },
+                    arrival: { date: "2026-04-07", time: "10:30", airport: "TLV" },
+                    duration: "10h 45m", seat: "20D", status: "confirmed",
+                    connectionTime: "1h 40m"
+                }
+            ]
+        },
+        {
+            participant: "Dandan",
+            outbound: [
+                {
+                    flightNo: "IB 1874", airline: "Iberia Express", aircraft: "A321NEO",
+                    departure: { date: "2026-03-18", time: "06:00", airport: "TLV" },
+                    arrival: { date: "2026-03-18", time: "10:30", airport: "MAD" },
+                    duration: "5h 30m", seat: "TBD", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 243", airline: "Iberia", aircraft: "A350-900",
+                    departure: { date: "2026-03-18", time: "12:25", airport: "MAD" },
+                    arrival: { date: "2026-03-18", time: "16:35", airport: "SJO" },
+                    duration: "11h 10m", seat: "TBD", status: "confirmed",
+                    connectionTime: "1h 55m"
+                }
+            ],
+            return: [
+                {
+                    flightNo: "IB 4991", airline: "American Airlines", aircraft: "B737-800",
+                    departure: { date: "2026-04-06", time: "10:25", airport: "SJO" },
+                    arrival: { date: "2026-04-06", time: "15:29", airport: "MIA" },
+                    duration: "3h 4m", seat: "TBD", status: "confirmed"
+                },
+                {
+                    flightNo: "IB 4610", airline: "American Airlines", aircraft: "B777-200",
+                    departure: { date: "2026-04-06", time: "18:15", airport: "MIA" },
+                    arrival: { date: "2026-04-07", time: "09:05", airport: "TLV" },
+                    duration: "9h 50m", seat: "TBD", status: "confirmed",
+                    connectionTime: "2h 46m"
+                }
+            ]
+        }
+    ];
+
+    // Initialize flight data in storage
+    StorageManager.load('crTripFlightData', flightData);
+
+    var routeCoords = tripData.map(function(s) { return [s.lat, s.lng]; });
+    var map, routeBounds;
+    var flightRefreshIntervals = {}; // Store refresh interval IDs
+
+    // Initialize expenses and budget from storage
+    var expenses = StorageManager.load('crTripExpenses', []);
+    var tripBudget = StorageManager.load('crTripBudget', 5000); // Default $5000
+
+    // ===== PASSWORD MANAGER =====
+    var PasswordManager = {
+        passwordHash: StorageManager.load('crTripBudgetPassword', null),
+        authenticated: false,
+
+        hashPassword: async function(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        },
+
+        setPassword: async function(password) {
+            this.passwordHash = await this.hashPassword(password);
+            StorageManager.save('crTripBudgetPassword', this.passwordHash);
+        },
+
+        authenticate: async function(password) {
+            if (!this.passwordHash) {
+                // First time - set password
+                await this.setPassword(password);
+                this.authenticated = true;
+                return true;
+            }
+
+            // Verify password
+            const enteredHash = await this.hashPassword(password);
+            if (enteredHash === this.passwordHash) {
+                this.authenticated = true;
+                return true;
+            }
+            return false;
+        },
+
+        logout: function() {
+            this.authenticated = false;
+        },
+
+        isAuthenticated: function() {
+            return this.authenticated;
+        }
+    };
+
+    // Initialize password on first load
+    (async function() {
+        if (!PasswordManager.passwordHash) {
+            await PasswordManager.setPassword('Miritcosta');
+        }
+    })();
+
+    // Add test data if no expenses exist
+    if (expenses.length === 0) {
+        var testExpenses = [
+            {
+                id: 'exp_test_flights',
+                date: '2026-03-18',
+                amount: 1200.50,
+                currency: 'USD',
+                category: 'Flights',
+                description: 'Outbound flights (LATAM LA555)'
+            },
+            {
+                id: 'exp_test_accommodation',
+                date: '2026-03-20',
+                amount: 980.00,
+                currency: 'USD',
+                category: 'Accommodation',
+                description: 'Hotel bookings (Puerto Viejo, Arenal, Monteverde)'
+            },
+            {
+                id: 'exp_test_transportation',
+                date: '2026-03-23',
+                amount: 450.00,
+                currency: 'USD',
+                category: 'Transportation',
+                description: 'Rental car and transfers'
+            },
+            {
+                id: 'exp_test_food',
+                date: '2026-03-25',
+                amount: 320.00,
+                currency: 'USD',
+                category: 'Food',
+                description: 'Meals and dining'
+            }
+        ];
+        expenses = testExpenses;
+        StorageManager.save('crTripExpenses', expenses);
+    }
+
+    // ===== EXPENSE MANAGER =====
+    var ExpenseManager = {
+        categories: ['Flights', 'Transportation', 'Travel agency', 'Accommodation', 'Food', 'Other'],
+
+        generateId: function() {
+            return 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        },
+
+        addExpense: function(expenseData) {
+            var newExpense = {
+                id: this.generateId(),
+                date: expenseData.date,
+                amount: parseFloat(expenseData.amount),
+                currency: expenseData.currency,
+                category: expenseData.category,
+                description: expenseData.description || ''
+            };
+
+            expenses.push(newExpense);
+            StorageManager.save('crTripExpenses', expenses);
+            return newExpense;
+        },
+
+        deleteExpense: function(id) {
+            var index = expenses.findIndex(function(e) { return e.id === id; });
+            if (index > -1) {
+                expenses.splice(index, 1);
+                StorageManager.save('crTripExpenses', expenses);
+                return true;
+            }
+            return false;
+        },
+
+        editExpense: function(id, expenseData) {
+            var expense = expenses.find(function(e) { return e.id === id; });
+            if (expense) {
+                expense.date = expenseData.date;
+                expense.amount = parseFloat(expenseData.amount);
+                expense.currency = expenseData.currency;
+                expense.category = expenseData.category;
+                expense.description = expenseData.description || '';
+                StorageManager.save('crTripExpenses', expenses);
+                return expense;
+            }
+            return null;
+        },
+
+        getAllExpenses: function() {
+            return expenses.slice().sort(function(a, b) {
+                return new Date(b.date) - new Date(a.date);
+            });
+        },
+
+        getTotalByCategory: function() {
+            var totals = {};
+            this.categories.forEach(function(cat) { totals[cat] = 0; });
+
+            expenses.forEach(function(exp) {
+                if (totals.hasOwnProperty(exp.category)) {
+                    totals[exp.category] += exp.amount;
+                }
+            });
+
+            return totals;
+        },
+
+        getTotalSpent: function() {
+            return expenses.reduce(function(sum, exp) { return sum + exp.amount; }, 0);
+        }
+    };
+
+    // ===== OPENSKY NETWORK API INTEGRATION =====
+    // Using free CORS proxy to bypass CORS restrictions
+    var CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+    var OPENSKY_API = 'https://opensky-network.org/api/flights/all';
+    var flightDataCache = {};
+    var CACHE_DURATION = 5 * 60 * 1000; // 5 minute cache
+
+    function getCachedFlightData(flightNumber) {
+        var cached = flightDataCache[flightNumber];
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+            return cached.data;
+        }
+        return null;
+    }
+
+    function setCachedFlightData(flightNumber, data) {
+        flightDataCache[flightNumber] = { data: data, timestamp: Date.now() };
+    }
+
+    // ===== FLIGHT DETAILS MANAGER =====
+    var FlightDetailsManager = {
+        formatDate: function(dateString) {
+            // Format: "2026-03-18" → "18 Mar 2026"
+            var date = new Date(dateString + 'T00:00:00Z');
+            var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            var day = date.getUTCDate();
+            var month = months[date.getUTCMonth()];
+            var year = date.getUTCFullYear();
+            return day + ' ' + month + ' ' + year;
+        },
+
+        formatDateShort: function(dateString) {
+            // Format: "2026-03-18" → "18/03/2026" (DD/MM/YYYY)
+            if (!dateString) return 'TBD';
+            var parts = dateString.split('-');
+            if (parts.length === 3) {
+                return parts[2] + '/' + parts[1] + '/' + parts[0]; // DD/MM/YYYY
+            }
+            return dateString;
+        },
+
+        calculateCountdown: function(dateTimeString, isArrival) {
+            var flightTime = new Date(dateTimeString);
+            var now = new Date();
+            var diff = flightTime - now;
+
+            if (diff <= 0) {
+                return isArrival ? "Landed" : "Departed";
+            }
+
+            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            if (days > 0) {
+                return days + "d " + hours + "h";
+            } else if (hours > 0) {
+                return hours + "h " + minutes + "m";
+            } else {
+                return minutes + "m";
+            }
+        },
+
+        getFlightStatus: function(flightNo) {
+            // Default fallback status for all flights
+            var statuses = {
+                "IB 1874": { status: "on-time", text: "On Time", color: "green", gate: "---" },
+                "IB 243": { status: "on-time", text: "On Time", color: "green", gate: "---" },
+                "IB 4991": { status: "on-time", text: "On Time", color: "green", gate: "---" },
+                "IB 4610": { status: "on-time", text: "On Time", color: "green", gate: "---" },
+                "AC 80": { status: "on-time", text: "On Time", color: "green", gate: "---" },
+                "AC 956": { status: "on-time", text: "On Time", color: "green", gate: "---" }
+            };
+            return statuses[flightNo] || { status: "unknown", text: "Unknown", color: "yellow", gate: "---" };
+        },
+
+        fetchFlightDataFromAPI: function(flightNo, departureDate) {
+            // Check cache first
+            var cacheKey = flightNo + '_' + (departureDate || 'unknown');
+            var cached = getCachedFlightData(cacheKey);
+            if (cached) {
+                console.log('Using cached data for ' + flightNo);
+                return Promise.resolve(cached);
+            }
+
+            // OpenSky Network API returns all flights, we'll search for ours
+            console.log('🔄 Fetching flight data from OpenSky for: ' + flightNo);
+
+            var proxyUrl = CORS_PROXY + encodeURIComponent(OPENSKY_API);
+
+            return fetch(proxyUrl)
+                .then(function(response) {
+                    console.log('OpenSky API Response status:', response.status);
+                    return response.text();
+                })
+                .then(function(text) {
+                    var data = JSON.parse(text);
+                    console.log('📊 OpenSky response received, searching for ' + flightNo);
+
+                    if (!data || !Array.isArray(data)) {
+                        console.warn('⚠️ Unexpected OpenSky response format');
+                        return FlightDetailsManager.getFlightStatus(flightNo);
+                    }
+
+                    // Search for our flight in the list
+                    var matchingFlight = null;
+                    for (var i = 0; i < data.length; i++) {
+                        var flight = data[i];
+                        // OpenSky stores callsign, we need to match against our flight number
+                        if (flight.callsign && flight.callsign.trim().toUpperCase().includes(flightNo.toUpperCase())) {
+                            matchingFlight = flight;
+                            break;
+                        }
+                    }
+
+                    if (matchingFlight) {
+                        console.log('✅ Found flight ' + flightNo + ' in OpenSky data:', matchingFlight);
+
+                        // Determine status based on altitude and position
+                        var status = 'scheduled';
+                        var statusText = 'Scheduled';
+                        var color = 'green';
+
+                        if (matchingFlight.last_contact) {
+                            var lastContactTime = matchingFlight.last_contact * 1000; // Convert to ms
+                            var timeSinceContact = Date.now() - lastContactTime;
+
+                            if (timeSinceContact < 600000) { // Less than 10 minutes
+                                status = 'active';
+                                statusText = 'In Flight';
+                                color = 'green';
+                            }
+                        }
+
+                        var statusData = {
+                            status: status,
+                            text: statusText,
+                            color: color,
+                            gate: '---', // OpenSky doesn't provide gate info
+                            terminal: '---',
+                            altitude: matchingFlight.altitude ? Math.round(matchingFlight.altitude) + ' ft' : 'N/A',
+                            lastUpdated: new Date().toLocaleTimeString()
+                        };
+                        console.log('💾 Caching OpenSky data for ' + flightNo);
+                        setCachedFlightData(cacheKey, statusData);
+                        return statusData;
+                    } else {
+                        console.warn('⚠️ Flight ' + flightNo + ' not found in OpenSky data (' + data.length + ' total flights in system)');
+                        var defaultStatus = FlightDetailsManager.getFlightStatus(flightNo);
+                        setCachedFlightData(cacheKey, defaultStatus);
+                        return defaultStatus;
+                    }
+                })
+                .catch(function(error) {
+                    console.error('❌ Error fetching from OpenSky for ' + flightNo + ':', error);
+                    return FlightDetailsManager.getFlightStatus(flightNo);
+                });
+        },
+
+        getStatusText: function(flightStatus) {
+            var statusMap = {
+                'scheduled': 'Scheduled',
+                'active': 'In Flight',
+                'landed': 'Landed',
+                'cancelled': 'Cancelled',
+                'delayed': 'Delayed',
+                'diverted': 'Diverted'
+            };
+            return statusMap[flightStatus] || 'On Time';
+        },
+
+        getStatusColor: function(flightStatus) {
+            var colorMap = {
+                'scheduled': 'green',
+                'active': 'green',
+                'landed': 'green',
+                'cancelled': 'red',
+                'delayed': 'yellow',
+                'diverted': 'yellow'
+            };
+            return colorMap[flightStatus] || 'yellow';
+        },
+
+        formatFlightCard: function(participant, flight, isOutbound) {
+            var flightType = isOutbound ? "outbound" : "return";
+            var flightLegs = flight[flightType];
+
+            var html = '<div class="flight-section">';
+
+            // Handle each flight leg
+            flightLegs.forEach(function(leg, legIndex) {
+                var status = FlightDetailsManager.getFlightStatus(leg.flightNo);
+                var isUpcoming = leg.departure.date ? new Date(leg.departure.date + 'T' + leg.departure.time + ':00Z') > new Date() : false;
+                var countdownLabel = isOutbound ? "Departs in" : "Lands in";
+                var countdown = leg.departure.date ? FlightDetailsManager.calculateCountdown(leg.departure.date + 'T' + leg.departure.time + ':00Z', !isOutbound) : "";
+
+                // Show connection card BEFORE this flight if it has connectionTime
+                if (leg.connectionTime && legIndex > 0) {
+                    var prevLeg = flightLegs[legIndex - 1];
+                    html += '<div class="connection-card">';
+                    html += '<div class="connection-airport">' + prevLeg.arrival.airport + '</div>';
+                    html += '<div class="connection-times">';
+                    html += '<span class="conn-arrival">Arr: ' + (prevLeg.arrival.time || 'TBD') + '</span>';
+                    html += '<span class="conn-duration">↓ ' + leg.connectionTime + ' ↓</span>';
+                    html += '<span class="conn-departure">Dep: ' + (leg.departure.time || 'TBD') + '</span>';
+                    html += '</div>';
+                    html += '</div>';
+                }
+
+                html += '<div class="flight-leg">';
+
+                // Compact flight leg with details
+                html += '<div class="flight-leg-compact">';
+
+                // Departure airport (compact with city)
+                html += '<div class="airport-compact">';
+                html += '<div class="airport-code-compact">' + leg.departure.airport + '</div>';
+                html += '<div class="airport-city-compact">' + (airportCodes[leg.departure.airport] || '') + '</div>';
+                html += '</div>';
+
+                // Arrow and duration
+                html += '<div class="flight-arrow-compact">→</div>';
+
+                // Arrival airport (compact with city)
+                html += '<div class="airport-compact">';
+                html += '<div class="airport-code-compact">' + leg.arrival.airport + '</div>';
+                html += '<div class="airport-city-compact">' + (airportCodes[leg.arrival.airport] || '') + '</div>';
+                html += '</div>';
+
+                // Duration
+                html += '<div class="flight-duration-compact">' + (leg.duration || 'TBD') + '</div>';
+
+                html += '</div>';
+
+                // Flight details inline
+                if (leg.flightNo !== 'TBD') {
+                    html += '<div class="flight-details-inline">';
+                    html += '<span class="flight-number">' + leg.airline + ' ' + leg.flightNo + '</span>';
+                    html += '<span class="flight-time" data-flight="' + leg.flightNo + '">' + (leg.departure.date ? FlightDetailsManager.formatDateShort(leg.departure.date) + ' ' + leg.departure.time : 'TBD') + '</span>';
+                    html += '<span class="flight-seat" data-flight="' + leg.flightNo + '">Seat ' + (leg.seat || 'TBD') + '</span>';
+                    html += '<span class="flight-gate" data-flight="' + leg.flightNo + '">Gate ' + (leg.gate || '---') + '</span>';
+                    html += '<div class="flight-status-inline">';
+                    html += '<div class="status-led ' + status.color + '" data-flight="' + leg.flightNo + '"></div>';
+                    html += '<span class="status-text ' + status.color + '" data-flight="' + leg.flightNo + '">' + status.text + '</span>';
+                    html += '</div>';
+                    html += '</div>';
+
+                    if (isUpcoming && countdown) {
+                        html += '<div class="countdown-inline">';
+                        html += '<span class="countdown-label-inline">' + countdownLabel + '</span>';
+                        html += '<span class="countdown-time-inline">' + countdown + '</span>';
+                        html += '</div>';
+                    }
+                } else {
+                    html += '<div class="flight-tbd">Flight details TBD</div>';
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+
+            return html;
+        },
+
+        togglePersonCard: function(personId) {
+            var cardElement = document.getElementById(personId);
+            if (cardElement) {
+                cardElement.classList.toggle('expanded');
+            }
+        },
+
+        renderFlights: function() {
+            var container = document.getElementById('flights-content');
+            var html = '<div class="flight-container">';
+
+            var personIcons = {
+                'Han': { icon: '👨', role: 'Father', class: 'person-han' },
+                'Mirit': { icon: '👩', role: 'Mother', class: 'person-merit' },
+                'Ely': { icon: '👨‍🦰', role: 'Young Adult', class: 'person-eli' },
+                'Gaya': { icon: '👩', role: 'Young Adult', class: 'person-gaiah' },
+                'Lia': { icon: '👩‍🦱', role: 'Young Adult', class: 'person-lya' },
+                'Dandan': { icon: '👦', role: 'Teenager', class: 'person-dandan' }
+            };
+
+            flightData.forEach(function(passenger) {
+                var personData = personIcons[passenger.participant] || { icon: '👤', role: '', class: '' };
+                var personId = 'person-card-' + passenger.participant;
+
+                // Get departure date/time from first outbound flight
+                var departureInfo = '';
+                if (passenger.outbound && passenger.outbound[0] && passenger.outbound[0].departure) {
+                    var firstFlight = passenger.outbound[0];
+                    departureInfo = FlightDetailsManager.formatDateShort(firstFlight.departure.date || '') + ' ' + (firstFlight.departure.time || '') +
+                                    ' • ' + (firstFlight.departure.airport || '') + ' → ' + (firstFlight.arrival.airport || '');
+                }
+
+                html += '<div class="flight-card ' + personData.class + '" id="' + personId + '">';
+
+                // Person header with collapse arrow
+                html += '<div class="flight-card-header-person" onclick="FlightDetailsManager.togglePersonCard(\'' + personId + '\')">';
+                html += '<div class="person-collapse-arrow">→</div>';
+                html += '<div class="person-header-content">';
+                html += '<h3><span class="flight-person-icon">' + personData.icon + '</span>' + passenger.participant + '</h3>';
+                html += '<div class="person-departure-info">' + departureInfo + '</div>';
+                html += '</div>';
+                html += '</div>';
+
+                // Flight card body (collapsed by default)
+                html += '<div class="flight-card-body-person">';
+
+                // Outbound section
+                html += '<div class="journey-section">';
+                html += '<div class="journey-title">✈️ OUTBOUND</div>';
+                html += FlightDetailsManager.formatFlightCard(passenger.participant, passenger, true);
+                html += '</div>';
+
+                // Return section
+                html += '<div class="journey-section">';
+                html += '<div class="journey-title">✈️ RETURN</div>';
+                html += FlightDetailsManager.formatFlightCard(passenger.participant, passenger, false);
+                html += '</div>';
+
+                html += '</div>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            // API integration disabled - using static flight data only
+            // To enable real-time API: uncomment loadRealFlightData() below
+            // setTimeout(function() {
+            //     FlightDetailsManager.loadRealFlightData();
+            // }, 500);
+        },
+
+        loadRealFlightData: function() {
+            console.log('=== Starting to load real flight data ===');
+            var callCount = 0;
+
+            // Fetch real flight data from Aviationstack for all flights
+            flightData.forEach(function(passenger) {
+                var allLegs = (passenger.outbound || []).concat(passenger.return || []);
+                allLegs.forEach(function(leg) {
+                    if (leg.flightNo && leg.flightNo !== 'TBD') {
+                        callCount++;
+                        var departureDate = leg.departure && leg.departure.date ? leg.departure.date : null;
+                        console.log('Fetching flight #' + callCount + ': ' + leg.flightNo + ' on ' + departureDate);
+
+                        FlightDetailsManager.fetchFlightDataFromAPI(leg.flightNo, departureDate).then(function(flightInfo) {
+                            console.log('Received data for ' + leg.flightNo + ':', flightInfo);
+
+                            // Update ALL flight information in the DOM
+                            var flightElements = document.querySelectorAll('[data-flight="' + leg.flightNo + '"]');
+                            console.log('Found ' + flightElements.length + ' elements to update for ' + leg.flightNo);
+
+                            flightElements.forEach(function(elem) {
+                                // Update gate
+                                if (elem.classList.contains('flight-gate')) {
+                                    elem.textContent = 'Gate ' + flightInfo.gate;
+                                    elem.setAttribute('data-updated', 'true');
+                                }
+                                // Update departure time
+                                if (elem.classList.contains('flight-time')) {
+                                    var timeDisplay = flightInfo.departureTime || (leg.departure.date ? FlightDetailsManager.formatDateShort(leg.departure.date) + ' ' + leg.departure.time : 'TBD');
+                                    elem.textContent = timeDisplay;
+                                    if (flightInfo.delay && flightInfo.delay > 0) {
+                                        elem.textContent += ' (+' + flightInfo.delay + ' min)';
+                                        elem.style.color = '#dc3545';
+                                    }
+                                }
+                                // Update seat
+                                if (elem.classList.contains('flight-seat')) {
+                                    elem.textContent = 'Seat ' + (leg.seat || 'TBD');
+                                }
+                                // Update status text
+                                if (elem.classList.contains('flight-status-text')) {
+                                    elem.textContent = flightInfo.text;
+                                    elem.className = 'status-text ' + flightInfo.color;
+                                }
+                                // Update status LED
+                                if (elem.classList.contains('status-led')) {
+                                    elem.className = 'status-led ' + flightInfo.color;
+                                }
+                            });
+                        }).catch(function(err) {
+                            console.error('Error fetching ' + leg.flightNo + ':', err);
+                        });
+                    }
+                });
+            });
+
+            console.log('Total flight API calls initiated: ' + callCount);
+        },
+
+        startRefreshCycle: function() {
+            // Refresh all flight data periodically
+            flightData.forEach(function(passenger) {
+                // Get first outbound and return flight legs for timing
+                var outboundLeg = passenger.outbound && passenger.outbound[0];
+                var returnLeg = passenger.return && passenger.return[0];
+                var now = new Date();
+
+                var hoursToOutbound = 24; // default
+                var hoursToReturn = 24; // default
+
+                if (outboundLeg && outboundLeg.departure && outboundLeg.departure.date) {
+                    var outboundTime = new Date(outboundLeg.departure.date + 'T' + (outboundLeg.departure.time || '00:00') + ':00Z');
+                    hoursToOutbound = (outboundTime - now) / (1000 * 60 * 60);
+                }
+
+                if (returnLeg && returnLeg.departure && returnLeg.departure.date) {
+                    var returnTime = new Date(returnLeg.departure.date + 'T' + (returnLeg.departure.time || '00:00') + ':00Z');
+                    hoursToReturn = (returnTime - now) / (1000 * 60 * 60);
+                }
+
+                // Determine refresh interval
+                var interval;
+                if ((hoursToOutbound > 0 && hoursToOutbound < 24) || (hoursToReturn > 0 && hoursToReturn < 24)) {
+                    interval = 15 * 60 * 1000; // 15 minutes if within 24 hours
+                } else if (hoursToOutbound > 0 || hoursToReturn > 0) {
+                    interval = 12 * 60 * 60 * 1000; // 12 hours if more than 24 hours away
+                } else {
+                    interval = 5 * 60 * 1000; // 5 minutes if flight is active/past
+                }
+
+                // Set up refresh interval
+                flightRefreshIntervals[passenger.participant] = setInterval(function() {
+                    FlightDetailsManager.updateFlightStatus(passenger.participant);
+                }, interval);
+            });
+        },
+
+        updateFlightStatus: function(participantName) {
+            // This will be called periodically to update flight status from API
+            // Just update the data, don't re-render (renderFlights already calls loadRealFlightData)
+            if (currentPage === 'flights') {
+                FlightDetailsManager.loadRealFlightData();
+            }
+        },
+
+        init: function() {
+            this.renderFlights();
+            // API refresh cycle disabled - using static flight data only
+            // this.startRefreshCycle();
+        }
+    };
+
+    function initMap() {
+        map = L.map('map', { zoomControl: true, scrollWheelZoom: true });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Station markers
+        tripData.forEach(function(station) {
+            var marker = L.marker([station.lat, station.lng], {
+                icon: L.divIcon({
+                    className: '',
+                    html: '<div style="width:40px;height:40px;border-radius:50%;background:#002b7f;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;box-shadow:0 3px 12px rgba(0,0,0,0.35);border:3px solid white;cursor:pointer;">' + station.station + '</div>',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20]
+                })
+            }).addTo(map);
+
+            marker.on('click', function() { openCard(station); });
+
+            // Name label
+            L.marker([station.lat, station.lng], {
+                icon: L.divIcon({
+                    className: '',
+                    html: '<div style="white-space:nowrap;font-size:11px;font-weight:600;color:#333;text-shadow:1px 1px 2px white,-1px -1px 2px white,0 0 4px white;pointer-events:none;transform:translateY(-26px);">' + station.name + '</div>',
+                    iconSize: [0, 0],
+                    iconAnchor: [0, 12]
+                }),
+                interactive: false
+            }).addTo(map);
+        });
+
+        routeBounds = L.latLngBounds(routeCoords);
+        map.fitBounds(routeBounds, { padding: [60, 60] });
+
+        fetchRoadRoute();
+    }
+
+    // Fetch real road route from OSRM
+    async function fetchRoadRoute() {
+        try {
+            const coords = routeCoords.map(p => p[1] + ',' + p[0]).join(';');
+            const url = 'https://router.project-osrm.org/route/v1/driving/' + coords + '?overview=full&geometries=geojson';
+            const resp = await fetch(url);
+            const data = await resp.json();
+
+            if (data.code === 'Ok' && data.routes && data.routes[0]) {
+                const latlngs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                L.polyline(latlngs, {
+                    color: '#ce1126', weight: 4, opacity: 0.8
+                }).addTo(map);
+                routeBounds = L.latLngBounds(latlngs);
+                map.fitBounds(routeBounds, { padding: [60, 60] });
+            } else {
+                fallbackRoute();
+            }
+        } catch (err) {
+            console.warn('OSRM failed, fallback:', err);
+            fallbackRoute();
+        }
+    }
+
+    function fallbackRoute() {
+        L.polyline(routeCoords, {
+            color: '#ce1126', weight: 4, opacity: 0.8, dashArray: '10, 5'
+        }).addTo(map);
+    }
+
+    // ===== CARD FUNCTIONS — GLOBAL SCOPE =====
+    function openCard(station) {
+        var card = document.getElementById('overlay-card');
+        var backdrop = document.getElementById('overlay-backdrop');
+
+        var html = '<div class="card-header">';
+        html += '<button class="card-close" onclick="closeCard()">&times;</button>';
+        html += '<h2>Station ' + station.station + ': ' + station.name + '</h2>';
+        html += '<div class="card-dates">' + station.dates + ' (' + station.nights + ' night' + (station.nights > 1 ? 's' : '') + ')</div>';
+        html += '<div class="card-travelers">👥 ' + station.travelers + '</div>';
+        if (station.travelersNote) {
+            html += '<div style="margin-top: 0.4rem; font-size: 0.85rem; opacity: 0.85;">✈️ ' + station.travelersNote + '</div>';
+        }
+        html += '</div>';
+
+        html += '<div class="card-body">';
+        html += '<div class="card-section">';
+        html += '<h4>🏨 Accommodation</h4>';
+        html += '<div class="link-buttons">';
+        html += '<a href="' + station.accommodationUrl + '" target="_blank" class="link-button">🏨 ' + station.accommodation + '</a>';
+        html += '<a href="' + station.instagramSearch + '" target="_blank" class="link-button instagram">📸 Instagram</a>';
+        html += '</div>';
+        html += '</div>';
+
+        if (station.activities && station.activities.length > 0) {
+            html += '<div class="card-section">';
+            html += '<h4>' + (station.isSuggestions ? '🏖️ Things to do' : '🎯 Activities') + '</h4>';
+            html += '<ul>';
+            station.activities.forEach(function(activity) {
+                html += '<li><span class="activity-date">' + activity.date + '</span>' + activity.text + '</li>';
+            });
+            html += '</ul>';
+            html += '</div>';
+        }
+
+        html += '</div>';
+
+        card.innerHTML = html;
+        card.classList.add('active');
+        backdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCard() {
+        document.getElementById('overlay-card').classList.remove('active');
+        document.getElementById('overlay-backdrop').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function centerMap() {
+        if (routeBounds) map.fitBounds(routeBounds, { padding: [60, 60] });
+    }
+
+    document.getElementById('overlay-backdrop').onclick = closeCard;
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCard(); });
+
+    // Initialize on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMap);
+    } else {
+        initMap();
+    }
+
+    // Invalidate map size when switching back to map page (for proper Leaflet rendering)
+    var originalShowPage = showPage;
+    showPage = function(pageName) {
+        originalShowPage(pageName);
+        if (pageName === 'map' && map) {
+            setTimeout(function() { map.invalidateSize(); }, 50);
+        }
+    };
+    </script>
+</body>
+</html>
